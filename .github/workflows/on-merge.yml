@@ -22,11 +22,11 @@ jobs:
         run: |
           aws s3 cp app.zip s3://sg-puvilink-dev-sls-deployment-bucket-ap-south-1/${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip
           echo "artifact-key=${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip" >> $GITHUB_OUTPUT
-      - uses: ../actions/prune-artifacts
-        with:
-          repo: ${{ github.repository }}
-          bucket: sg-puvilink-dev-sls-deployment-bucket-ap-south-1
-          keep: 3
+      # - uses: ../actions/prune-artifacts
+      #   with:
+      #     repo: ${{ github.repository }}
+      #     bucket: sg-puvilink-dev-sls-deployment-bucket-ap-south-1
+      #     keep: 3
 
   deploy-dev:
     needs: build
