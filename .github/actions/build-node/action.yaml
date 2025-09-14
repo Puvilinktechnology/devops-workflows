@@ -24,10 +24,14 @@ runs:
       run: npm ci
       shell: bash
       working-directory: ${{ inputs.pipelineDirectory }}
+      env:
+        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
     - name: Build
       run: npm run build
       shell: bash
       working-directory: ${{ inputs.pipelineDirectory }}
+      env:
+        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
     - name: Package artifact
       run: zip -r app.zip .
       shell: bash
