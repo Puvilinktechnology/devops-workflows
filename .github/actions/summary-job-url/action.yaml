@@ -1,0 +1,22 @@
+name: Summary With Job Url
+description: Add a message that the job is complete, including a link to the logs.
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/github-script@v6
+      id: job-url
+      with:
+        result-encoding: string
+        script: |
+          const { data } = await github.rest.actions.listJobsForWorkflowRunAttempt({
+            ...context.repo,
+            run_id: context.runId,
+            attempt_number: process.env.GITHUB_RUN_ATTEMPT,
+          });
+          const jobsInProgress = data.jobs.filter(job => job.status == 'in_progress');
+          return jobsInProgress[0]?.html_url || '';
+    - shell: bash
+      run: |
+        echo "# Job complete! :rocket:" >> $GITHUB_STEP_SUMMARY
+        echo "[[logs](${{ steps.job-url.outputs.result }})]" >> $GITHUB_STEP_SUMMARY

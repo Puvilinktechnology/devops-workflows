@@ -1,0 +1,87 @@
+name: On Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-key: ${{ steps.upload-artifact.outputs.artifact-key }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ../actions/build-node
+        with:
+          node-version: '22'
+          pipelineDirectory: .
+      - name: Upload to S3
+        id: upload-artifact
+        run: |
+          aws s3 cp app.zip s3://sg-puvilink-dev-sls-deployment-bucket-ap-south-1/${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip
+          echo "artifact-key=${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip" >> $GITHUB_OUTPUT
+      - uses: ../actions/prune-artifacts
+        with:
+          repo: ${{ github.repository }}
+          bucket: sg-puvilink-dev-sls-deployment-bucket-ap-south-1
+          keep: 3
+
+  deploy-dev:
+    needs: build
+    uses: ../actions/deploy-serverless
+    secrets: inherit
+    with:
+      environment: dev
+      artifact-key: ${{ needs.build.outputs.artifact-key }}
+      aws-region: us-east-1
+      role-to-assume: arn:aws:iam::339804037287:role/oidc-deployment-role
+
+  deploy-sit:
+    needs: deploy-dev
+    environment:
+      name: sit
+      reviewers: [lead-team]
+    uses: ../actions/deploy-serverless
+    secrets: inherit
+    with:
+      environment: sit
+      artifact-key: ${{ needs.build.outputs.artifact-key }}
+      aws-region: ap-south-1
+      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+
+  deploy-stage:
+    needs: deploy-sit
+    environment:
+      name: stage
+      reviewers: [lead-team]
+    uses: ../actions/deploy-serverless
+    secrets: inherit
+    with:
+      environment: stage
+      artifact-key: ${{ needs.build.outputs.artifact-key }}
+      aws-region: ap-south-1
+      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+
+  deploy-prod:
+    needs: deploy-stage
+    environment:
+      name: production
+      reviewers: [lead-team]
+    uses: ../actions/deploy-serverless
+    secrets: inherit
+    with:
+      environment: prod
+      artifact-key: ${{ needs.build.outputs.artifact-key }}
+      aws-region: ap-south-1
+      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+
+  deploy-dr:
+    needs: deploy-prod
+    uses: ../actions/deploy-serverless
+    secrets: inherit
+    with:
+      environment: dr
+      artifact-key: ${{ needs.build.outputs.artifact-key }}
+      aws-region: ap-south-1
+      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role

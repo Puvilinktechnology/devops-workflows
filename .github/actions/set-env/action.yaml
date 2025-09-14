@@ -1,0 +1,14 @@
+name: Set Environment Variables
+description: Set environment variables for the workflow
+
+inputs:
+  env-vars:
+    description: Environment variables to set
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        echo "${{ inputs.env-vars }}" >> $GITHUB_ENV

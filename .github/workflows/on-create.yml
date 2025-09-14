@@ -1,0 +1,11 @@
+name: On PR Create
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pipeline:
+    uses: ./.github/workflows/pipeline.yml
+    with:
+      environment: dev

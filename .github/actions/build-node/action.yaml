@@ -1,0 +1,41 @@
+name: Build Node App
+description: Build and package a Node.js application
+
+inputs:
+  node-version:
+    description: "Version of Node.js to use"
+    required: true
+  pipelineDirectory:
+    description: "Directory containing the pipeline code"
+    required: true
+
+outputs:
+  artifact-key:
+    description: "S3 key for the build artifact"
+    value: ${{ steps.upload-artifact.outputs.artifact-key }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
+      working-directory: ${{ inputs.pipelineDirectory }}
+    - name: Build
+      run: npm run build
+      shell: bash
+      working-directory: ${{ inputs.pipelineDirectory }}
+    - name: Package artifact
+      run: zip -r app.zip .
+      shell: bash
+      working-directory: ${{ inputs.pipelineDirectory }}
+    - name: Upload to S3
+      id: upload-artifact
+      run: |
+        aws s3 cp app.zip s3://sg-puvilink-dev-sls-deployment-bucket-ap-south-1/${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip
+        echo "artifact-key=${GITHUB_REPOSITORY}/app-${GITHUB_SHA}.zip" >> $GITHUB_OUTPUT
+      shell: bash
+      working-directory: ${{ inputs.pipelineDirectory }}

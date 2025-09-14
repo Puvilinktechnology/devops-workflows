@@ -1,0 +1,23 @@
+name: Prune Old Artifacts
+description: Keep only the last N build artifacts in S3
+
+inputs:
+  repo:
+    description: "Repository name or identifier"
+    required: true
+  bucket:
+    description: "S3 bucket name"
+    required: true
+  keep:
+    description: "Number of latest artifacts to keep"
+    required: true
+    default: "3"
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        aws s3 ls s3://${{ inputs.bucket }}/${{ inputs.repo }}/ | sort -r | awk '{print $4}' | grep '^app-' | tail -n +${{ inputs.keep }} | while read artifact; do
+          aws s3 rm s3://${{ inputs.bucket }}/${{ inputs.repo }}/$artifact
+        done
