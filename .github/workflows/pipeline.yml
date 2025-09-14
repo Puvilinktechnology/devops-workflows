@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ../actions/build-node
+      # - uses: ../actions/build-node
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/build-node@master
         with:
           node-version: '22'
           pipelineDirectory: .

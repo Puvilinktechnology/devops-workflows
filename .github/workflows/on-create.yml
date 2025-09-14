@@ -6,6 +6,7 @@ on:
 
 jobs:
   pipeline:
-    uses: ./.github/workflows/pipeline.yml
+    #uses: ./.github/workflows/pipeline.yml
+    uses: Puvilinktechnology/devops-workflows/.github/workflows/pipeline.yml@master
     with:
       environment: dev
