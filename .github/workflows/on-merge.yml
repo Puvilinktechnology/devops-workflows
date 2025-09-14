@@ -12,7 +12,8 @@ jobs:
       artifact-key: ${{ steps.upload-artifact.outputs.artifact-key }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ../actions/build-node
+      #- uses: ../actions/build-node
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/build-node@master
         with:
           node-version: '22'
           pipelineDirectory: .
@@ -29,7 +30,8 @@ jobs:
 
   deploy-dev:
     needs: build
-    uses: ../actions/deploy-serverless
+    #uses: ../actions/deploy-serverless
+    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
     secrets: inherit
     with:
       environment: dev
@@ -39,10 +41,8 @@ jobs:
 
   deploy-sit:
     needs: deploy-dev
-    environment:
-      name: sit
-      reviewers: [lead-team]
-    uses: ../actions/deploy-serverless
+    #uses: ../actions/deploy-serverless
+    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
     secrets: inherit
     with:
       environment: sit
@@ -52,10 +52,7 @@ jobs:
 
   deploy-stage:
     needs: deploy-sit
-    environment:
-      name: stage
-      reviewers: [lead-team]
-    uses: ../actions/deploy-serverless
+    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
     secrets: inherit
     with:
       environment: stage
@@ -65,10 +62,7 @@ jobs:
 
   deploy-prod:
     needs: deploy-stage
-    environment:
-      name: production
-      reviewers: [lead-team]
-    uses: ../actions/deploy-serverless
+    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
     secrets: inherit
     with:
       environment: prod
@@ -78,7 +72,7 @@ jobs:
 
   deploy-dr:
     needs: deploy-prod
-    uses: ../actions/deploy-serverless
+    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
     secrets: inherit
     with:
       environment: dr
