@@ -15,8 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # - uses: ../actions/build-node
+      # Configure Serverless authentication for V.4+
+      - name: Configure Serverless
+        run: |
+          if [ -n "$SERVERLESS_ACCESS_KEY" ]; then
+            echo "Configuring Serverless Framework V.4+ authentication..."
+            # Create serverless config directory
+            mkdir -p ~/.serverless
+            # Set the access key in the global config
+            echo "accessKey: $SERVERLESS_ACCESS_KEY" > ~/.serverless/config.yml
+            # Also set as environment variable for this session
+            export SERVERLESS_ACCESS_KEY=$SERVERLESS_ACCESS_KEY
+            echo "Serverless authentication configured"
+          else
+            echo "Error: SERVERLESS_ACCESS_KEY not found in secrets"
+            exit 1
+          fi
       - uses: Puvilinktechnology/devops-workflows/.github/actions/build-node@master
         with:
           node-version: '22'
           pipelineDirectory: .
+        env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       - run: npm run test
