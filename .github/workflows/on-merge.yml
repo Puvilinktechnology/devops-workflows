@@ -4,19 +4,44 @@ on:
   push:
     branches:
       - master
+  workflow_call:
+    secrets:
+      SERVERLESS_ACCESS_KEY:
+        required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
     outputs:
       artifact-key: ${{ steps.upload-artifact.outputs.artifact-key }}
     steps:
       - uses: actions/checkout@v4
+      
+      # Configure Serverless authentication for V.4+
+      - name: Configure Serverless
+        run: |
+          if [ -n "$SERVERLESS_ACCESS_KEY" ]; then
+            echo "Configuring Serverless Framework V.4+ authentication..."
+            # Create serverless config directory
+            mkdir -p ~/.serverless
+            # Set the access key in the global config
+            echo "accessKey: $SERVERLESS_ACCESS_KEY" > ~/.serverless/config.yml
+            # Also set as environment variable for this session
+            export SERVERLESS_ACCESS_KEY=$SERVERLESS_ACCESS_KEY
+            echo "Serverless authentication configured"
+          else
+            echo "Warning: SERVERLESS_ACCESS_KEY not provided, skipping authentication"
+          fi
+      
       #- uses: ../actions/build-node
       - uses: Puvilinktechnology/devops-workflows/.github/actions/build-node@master
         with:
           node-version: '22'
           pipelineDirectory: .
+        env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       - name: Upload to S3
         id: upload-artifact
         run: |
@@ -30,52 +55,70 @@ jobs:
 
   deploy-dev:
     needs: build
-    #uses: ../actions/deploy-serverless
-    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
-    secrets: inherit
-    with:
-      environment: dev
-      artifact-key: ${{ needs.build.outputs.artifact-key }}
-      aws-region: us-east-1
-      role-to-assume: arn:aws:iam::339804037287:role/oidc-deployment-role
+    runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless@master
+        with:
+          environment: dev
+          artifact-key: ${{ needs.build.outputs.artifact-key }}
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::339804037287:role/oidc-deployment-role
 
   deploy-sit:
     needs: deploy-dev
-    #uses: ../actions/deploy-serverless
-    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
-    secrets: inherit
-    with:
-      environment: sit
-      artifact-key: ${{ needs.build.outputs.artifact-key }}
-      aws-region: ap-south-1
-      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+    runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless@master
+        with:
+          environment: sit
+          artifact-key: ${{ needs.build.outputs.artifact-key }}
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
 
   deploy-stage:
     needs: deploy-sit
-    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
-    secrets: inherit
-    with:
-      environment: stage
-      artifact-key: ${{ needs.build.outputs.artifact-key }}
-      aws-region: ap-south-1
-      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+    runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless@master
+        with:
+          environment: stage
+          artifact-key: ${{ needs.build.outputs.artifact-key }}
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
 
   deploy-prod:
     needs: deploy-stage
-    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
-    secrets: inherit
-    with:
-      environment: prod
-      artifact-key: ${{ needs.build.outputs.artifact-key }}
-      aws-region: ap-south-1
-      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+    runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless@master
+        with:
+          environment: prod
+          artifact-key: ${{ needs.build.outputs.artifact-key }}
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
 
   deploy-dr:
     needs: deploy-prod
-    uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless/action.yml@master
-    secrets: inherit
-    with:
-      environment: dr
-      artifact-key: ${{ needs.build.outputs.artifact-key }}
-      aws-region: ap-south-1
-      role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
+    runs-on: ubuntu-latest
+    env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Puvilinktechnology/devops-workflows/.github/actions/deploy-serverless@master
+        with:
+          environment: dr
+          artifact-key: ${{ needs.build.outputs.artifact-key }}
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::111111111111:role/oidc-deployment-role
